@@ -1,8 +1,7 @@
 extern crate filelib;
 
 pub use filelib::load_no_blanks;
-
-const SHOULD_DEBUG: bool = false;
+use log::info;
 
 pub fn parse(string_list: &Vec<String>) -> Vec<Vec<u32>> {
     let mut result = vec![];
@@ -32,54 +31,40 @@ fn is_safe(report: &Vec<u32>) -> bool {
     let mut is_increasing = false;
     let mut is_decreasing = false;
 
-    if SHOULD_DEBUG {
-        println!("Current report {:?}", report);
-    }
+    info!("Current report {:?}", report);
     for level in report {
         if !handle_first {
             handle_first = true;
             continue;
         }
-        if SHOULD_DEBUG {
-            println!("handling last {:?} and now {:?}", last_level, level);
-        }
+        info!("handling last {:?} and now {:?}", last_level, level);
 
         if level > last_level && is_decreasing {
             // if we are decreasing and the level is up, unsafe
-            if SHOULD_DEBUG {
-                println!("unsafe, cond1");
-            }
+            info!("unsafe, cond1");
             return false;
         } else if level < last_level && is_increasing {
             // If we are increasing and the level is down, unsafe
-            if SHOULD_DEBUG {
-                println!("unsafe, cond2");
-            }
+            info!("unsafe, cond2");
             return false;
         } else if level > last_level {
             let difference = level - last_level;
             is_increasing = true;
             if difference > 3 || difference < 1 {
-                if SHOULD_DEBUG {
-                    println!("unsafe, cond3");
-                }
+                info!("unsafe, cond3");
                 return false;
             }
         } else {
             let difference = last_level - level;
             is_decreasing = true;
             if difference > 3 || difference < 1 {
-                if SHOULD_DEBUG {
-                    println!("unsafe, cond4");
-                }
+                info!("unsafe, cond4");
                 return false;
             }
         }
         last_level = level
     }
-    if SHOULD_DEBUG {
-        println!("is safe!");
-    }
+    info!("is safe!");
     return true;
 }
 
