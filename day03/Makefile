@@ -4,10 +4,6 @@ build:
 	cargo build --verbose
 	cp target/debug/$(prog) $(prog).day
 
-release:
-	cargo build -r --verbose
-	cp target/release/$(prog) $(prog).day
-
 test:
 	cargo test --verbose
 
@@ -26,4 +22,4 @@ coverage:
 
 all: build
 
-.PHONY: build release test all clean format lint coverage
+.PHONY: build test all clean format lint coverage

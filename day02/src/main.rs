@@ -3,6 +3,8 @@ use day02::puzzle_a;
 use day02::puzzle_b;
 
 fn main() {
+    colog::init();
+
     let filename = "input";
     let lines = load_no_blanks(filename);
 
