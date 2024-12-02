@@ -3,6 +3,7 @@ use template::puzzle_a;
 use template::puzzle_b;
 
 fn main() {
+    colog::init();
     let filename = "input";
     let lines = load_no_blanks(filename);
 
