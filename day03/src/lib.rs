@@ -2,16 +2,35 @@ extern crate filelib;
 
 pub use filelib::load_no_blanks;
 use log::info;
+use regex::Regex;
 
-/// Foo
+fn extract_whole_muls(corruptInput: &Vec<String>) -> Vec<(i32, i32)> {
+    let mut result = vec![];
+    let extract_mul_regex = Regex::new(r"mul\((\d+),(\d+)\)").unwrap();
+    for line in corruptInput {
+        for capture in extract_mul_regex.captures_iter(line) {
+            let (_, [a_s, b_s]) = capture.extract();
+            info!("captured: {:?}, {:?}", a_s, b_s);
+            let a: i32 = a_s.parse().unwrap();
+            let b: i32 = b_s.parse().unwrap();
+            result.push((a, b));
+        }
+    }
+    return result;
+}
+
+/// Parse only things that match mul(x,y) exactly. Do not handle negative numbers. Add the results.
 /// ```
 /// let vec1: Vec<String> = vec![
-///     "foo"
+///     "xmul(2,4)%&mul[3,7]!@^do_not_mul(5,5)+mul(32,64]then(mul(11,8)mul(8,5))"
 /// ].iter().map(|s| s.to_string()).collect();
-/// assert_eq!(day03::puzzle_a(&vec1), 0);
+/// assert_eq!(day03::puzzle_a(&vec1), 161);
 /// ```
-pub fn puzzle_a(string_list: &Vec<String>) -> u32 {
-    return 0;
+pub fn puzzle_a(string_list: &Vec<String>) -> i32 {
+    return extract_whole_muls(string_list)
+        .into_iter()
+        .map(|(x, y)| x * y)
+        .sum();
 }
 
 /// Foo
@@ -21,22 +40,6 @@ pub fn puzzle_a(string_list: &Vec<String>) -> u32 {
 /// ].iter().map(|s| s.to_string()).collect();
 /// assert_eq!(day03::puzzle_b(&vec1), 0);
 /// ```
-pub fn puzzle_b(string_list: &Vec<String>) -> u32 {
+pub fn puzzle_b(string_list: &Vec<String>) -> i32 {
     return 0;
-}
-
-/// Delete this after starting on puzzle_a.
-/// ```
-/// let vec1: Vec<u32> = vec![];
-/// let vec2: Vec<u32> = vec![1];
-/// assert_eq!(day03::coverage_workaround(&vec1), 1);
-/// assert_eq!(day03::coverage_workaround(&vec2), 2);
-/// ```
-pub fn coverage_workaround(a: &Vec<u32>) -> u32 {
-    if a.len() == 0 {
-        info!("Example logging of {:?}", a);
-        return 1;
-    } else {
-        return 2;
-    }
 }
