@@ -5,15 +5,17 @@ Advent of Code for 2023 - https://adventofcode.com/2023
 
 Per day, remember to:
 ```
-export day=day25
+export day=day04
 cargo new $day
-cp day01/Makefile $day/
 cp -r template/* $day/
 find $day -type f -exec sed -i "s/template/$day/g" {} +
 make format
 find . -iname "template.day" -delete
 git add $day
 git commit -m "$day: Added template"
+git push origin HEAD:$day
+git branch --set-upstream-to origin/$day
+git branch -m $day
 ```
 
 By convention for this repo, so I can ignore it, all programs will be called `<foldername>.day` eg `day01.day`.
