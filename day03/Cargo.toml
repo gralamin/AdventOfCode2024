@@ -1,5 +1,5 @@
 [package]
-name = "day02"
+name = "day03"
 version = "0.1.0"
 edition = "2021"
 
@@ -9,3 +9,4 @@ edition = "2021"
 colog = "1.3.0"
 filelib = { path = "../filelib" }
 log = { version = "0.4.22", features=["max_level_trace", "release_max_level_warn"] }
+regex = "1.11.1"
