@@ -52,12 +52,12 @@ fn parse(lines: &Vec<String>) -> Grid<XMASChar> {
     return Grid::new(width, height, values);
 }
 
-// Find all x coordinates.
-fn find_all_xs(grid: &Grid<XMASChar>) -> Vec<GridCoordinate> {
+// Find all of a specific coordinates.
+fn find_all_char(grid: &Grid<XMASChar>, matching: XMASChar) -> Vec<GridCoordinate> {
     let mut x_coords: Vec<GridCoordinate> = vec![];
     for coord in grid.coord_iter() {
         if let Some(v) = grid.get_value(coord) {
-            if v == XMASChar::X {
+            if v == matching {
                 x_coords.push(coord);
             }
         }
@@ -138,17 +138,78 @@ fn search(grid: &Grid<XMASChar>, x_coords: &Vec<GridCoordinate>) -> u32 {
 /// ```
 pub fn puzzle_a(string_list: &Vec<String>) -> u32 {
     let grid = parse(string_list);
-    let x_coords = find_all_xs(&grid);
+    let x_coords = find_all_char(&grid, XMASChar::X);
     return search(&grid, &x_coords);
 }
 
-/// Foo
+// For each a, we just need to make sure we have two Ms, two Ss, and that any one set of opposite corners don't match.
+fn xsearch(grid: &Grid<XMASChar>, a_coords: &Vec<GridCoordinate>) -> u32 {
+    let mut result = 0;
+    for a_coord in a_coords {
+        let ne_coord;
+        match grid.get_coordinate_by_direction(*a_coord, Direction::NORTHEAST) {
+            Some(coord) => ne_coord = coord,
+            None => continue,
+        };
+        let se_coord;
+        match grid.get_coordinate_by_direction(*a_coord, Direction::SOUTHEAST) {
+            Some(coord) => se_coord = coord,
+            None => continue,
+        };
+        let nw_coord;
+        match grid.get_coordinate_by_direction(*a_coord, Direction::NORTHWEST) {
+            Some(coord) => nw_coord = coord,
+            None => continue,
+        };
+        let sw_coord;
+        match grid.get_coordinate_by_direction(*a_coord, Direction::SOUTHWEST) {
+            Some(coord) => sw_coord = coord,
+            None => continue,
+        };
+        let ne = grid.get_value(ne_coord).unwrap();
+        let se = grid.get_value(se_coord).unwrap();
+        let nw = grid.get_value(nw_coord).unwrap();
+        let sw = grid.get_value(sw_coord).unwrap();
+        let s_count = vec![ne, se, nw, sw]
+            .into_iter()
+            .filter(|&v| v == XMASChar::S)
+            .collect::<Vec<_>>()
+            .len();
+        let m_count = vec![ne, se, nw, sw]
+            .into_iter()
+            .filter(|&v| v == XMASChar::M)
+            .collect::<Vec<_>>()
+            .len();
+        if s_count != 2 || m_count != 2 {
+            continue;
+        }
+        if ne == sw || se == nw {
+            continue;
+        }
+        info!("Found X at A centered at {:?}", a_coord);
+        result += 1;
+    }
+    return result;
+}
+
+/// Find all MAS in the shape of an X
 /// ```
 /// let vec1: Vec<String> = vec![
-///     "foo"
+///     "MMMSXXMASM",
+///     "MSAMXMSMSA",
+///     "AMXSXMAAMM",
+///     "MSAMASMSMX",
+///     "XMASAMXAMM",
+///     "XXAMMXXAMA",
+///     "SMSMSASXSS",
+///     "SAXAMASAAA",
+///     "MAMMMXMMMM",
+///     "MXMXAXMASX"
 /// ].iter().map(|s| s.to_string()).collect();
-/// assert_eq!(day04::puzzle_b(&vec1), 0);
+/// assert_eq!(day04::puzzle_b(&vec1), 9);
 /// ```
 pub fn puzzle_b(string_list: &Vec<String>) -> u32 {
-    return 0;
+    let grid = parse(string_list);
+    let a_coords = find_all_char(&grid, XMASChar::A);
+    return xsearch(&grid, &a_coords);
 }
