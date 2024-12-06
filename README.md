@@ -5,7 +5,8 @@ Advent of Code for 2023 - https://adventofcode.com/2023
 
 Per day, remember to:
 ```
-export day=day04
+git pull --rebase
+export day=day05
 cargo new $day
 cp -r template/* $day/
 find $day -type f -exec sed -i "s/template/$day/g" {} +
