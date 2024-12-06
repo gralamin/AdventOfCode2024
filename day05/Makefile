@@ -9,7 +9,7 @@ release:
 	cp target/release/$(prog) $(prog).day
 
 test:
-	cargo test --verbose
+	RUST_LOG=info cargo test --verbose -- --nocapture
 
 clean:
 	cargo clean --verbose

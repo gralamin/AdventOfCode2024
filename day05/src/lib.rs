@@ -1,42 +1,107 @@
 extern crate filelib;
 
-pub use filelib::load_no_blanks;
+pub use filelib::{load, split_lines_by_blanks};
+use std::collections::HashSet;
+
 use log::info;
 
-/// Foo
-/// ```
-/// let vec1: Vec<String> = vec![
-///     "foo"
-/// ].iter().map(|s| s.to_string()).collect();
-/// assert_eq!(day05::puzzle_a(&vec1), 0);
-/// ```
-pub fn puzzle_a(string_list: &Vec<String>) -> u32 {
-    return 0;
-}
-
-/// Foo
-/// ```
-/// let vec1: Vec<String> = vec![
-///     "foo"
-/// ].iter().map(|s| s.to_string()).collect();
-/// assert_eq!(day05::puzzle_b(&vec1), 0);
-/// ```
-pub fn puzzle_b(string_list: &Vec<String>) -> u32 {
-    return 0;
-}
-
-/// Delete this after starting on puzzle_a.
-/// ```
-/// let vec1: Vec<u32> = vec![];
-/// let vec2: Vec<u32> = vec![1];
-/// assert_eq!(day05::coverage_workaround(&vec1), 1);
-/// assert_eq!(day05::coverage_workaround(&vec2), 2);
-/// ```
-pub fn coverage_workaround(a: &Vec<u32>) -> u32 {
-    if a.len() == 0 {
-        info!("Example logging of {:?}", a);
-        return 1;
-    } else {
-        return 2;
+fn parse_graph(string_list: &Vec<String>) -> HashSet<(i32, i32)> {
+    info!("GraphParsing: {:?}", string_list);
+    let mut result = HashSet::new();
+    for s in string_list {
+        let (i, j) = s.split_once("|").unwrap();
+        let before = i.parse().unwrap();
+        let after = j.parse().unwrap();
+        result.insert((before, after));
     }
+    return result;
+}
+
+fn parse_pages(string_list: &Vec<String>) -> Vec<Vec<i32>> {
+    info!("PageParsing: {:?}", string_list);
+    let list_of_list_of_values: Vec<Vec<&str>> = string_list
+        .into_iter()
+        .map(|x| x.split(",").collect::<Vec<&str>>())
+        .collect();
+    return list_of_list_of_values
+        .iter()
+        .map(|list| {
+            list.into_iter()
+                .map(|x| x.parse::<i32>().unwrap())
+                .collect()
+        })
+        .collect();
+}
+
+fn page_valid(graph: &HashSet<(i32, i32)>, page: &Vec<i32>) -> bool {
+    info!("Checking page {:?}", page);
+    for i in 0..page.len() {
+        let left = page[i];
+        for j in i + 1..page.len() {
+            let right = page[j];
+            if graph.contains(&(right, left)) {
+                info!("Found broken rule ({}|{})", right, left);
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+/// Build hash graph and check ordering.
+/// ```
+/// let vec1: Vec<String> = vec![
+///     "47|53",
+///     "97|13",
+///     "97|61",
+///     "97|47",
+///     "75|29",
+///     "61|13",
+///     "75|53",
+///     "29|13",
+///     "97|29",
+///     "53|29",
+///     "61|53",
+///     "97|53",
+///     "61|29",
+///     "47|13",
+///     "75|47",
+///     "97|75",
+///     "47|61",
+///     "75|61",
+///     "47|29",
+///     "75|13",
+///     "53|13",
+///     "",
+///     "75,47,61,53,29",
+///     "97,61,53,29,13",
+///     "75,29,13",
+///     "75,97,47,61,53",
+///     "61,13,29",
+///     "97,13,75,29,47"
+/// ].iter().map(|s| s.to_string()).collect();
+/// assert_eq!(day05::puzzle_a(&vec1.join("\n")), 143);
+/// ```
+pub fn puzzle_a(string_list: &String) -> i32 {
+    // groups[0] is depedency graph
+    // groups[1] is pagesToProduce
+    let groups = split_lines_by_blanks(string_list);
+    let graph = parse_graph(&groups[0]);
+    let pages = parse_pages(&groups[1]);
+    return pages
+        .into_iter()
+        .filter(|x| page_valid(&graph, x))
+        .map(|x| x[x.len() / 2])
+        .sum();
+}
+
+/// Foo
+/// ```
+/// let vec1: Vec<String> = vec![
+///     "foo"
+/// ].iter().map(|s| s.to_string()).collect();
+/// assert_eq!(day05::puzzle_b(&vec1.join("\n")), 0);
+/// ```
+pub fn puzzle_b(string_list: &String) -> u32 {
+    return 0;
 }
