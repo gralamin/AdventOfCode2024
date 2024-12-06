@@ -141,13 +141,63 @@ pub fn puzzle_a(string_list: &Vec<String>) -> usize {
     return positions.len();
 }
 
-/// Foo
+fn cycle_guard_detect_loop(m: &Map, g: &mut Guard) -> bool {
+    let mut last_pos = g.position.clone();
+    let mut last_dir = g.facing.clone();
+    let mut previous_location = HashSet::new();
+    previous_location.insert((last_dir, last_pos));
+    g.step(m);
+
+    while g.position != last_pos || g.facing != last_dir {
+        if previous_location.contains(&(g.facing, g.position)) {
+            return true;
+        }
+        last_pos = g.position.clone();
+        last_dir = g.facing.clone();
+        previous_location.insert((last_dir, last_pos));
+        g.step(m);
+    }
+    return false;
+}
+
+/// Flip a bit to trap the guard in a loop.
 /// ```
 /// let vec1: Vec<String> = vec![
-///     "foo"
+///     "....#.....",
+///     ".........#",
+///     "..........",
+///     "..#.......",
+///     ".......#..",
+///     "..........",
+///     ".#..^.....",
+///     "........#.",
+///     "#.........",
+///     "......#..."
 /// ].iter().map(|s| s.to_string()).collect();
-/// assert_eq!(day06::puzzle_b(&vec1), 0);
+/// assert_eq!(day06::puzzle_b(&vec1), 6);
 /// ```
-pub fn puzzle_b(string_list: &Vec<String>) -> u32 {
-    return 0;
+pub fn puzzle_b(string_list: &Vec<String>) -> usize {
+    let (map, guard) = parse_map(string_list);
+    let mut clone_iniital_path_guard = guard.clone();
+    let positions = cycle_guard(&map, &mut clone_iniital_path_guard);
+
+    return map
+        .coord_iter()
+        .filter(|&coord| {
+            if coord == guard.position {
+                // Can't put in starting position
+                return false;
+            }
+            if !positions.contains(&coord) {
+                // If we never reach it, no point in checking
+                return false;
+            }
+            // Valid coord to switch
+            let mut cur_map = map.clone();
+            cur_map.set_value(coord, SpaceType::Wall);
+            let mut cur_guard = guard.clone();
+            return cycle_guard_detect_loop(&cur_map, &mut cur_guard);
+        })
+        .collect::<Vec<_>>()
+        .len();
 }
