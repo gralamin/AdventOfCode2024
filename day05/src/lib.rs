@@ -1,6 +1,7 @@
 extern crate filelib;
 
 pub use filelib::{load, split_lines_by_blanks};
+use std::cmp::Ordering;
 use std::collections::HashSet;
 
 use log::info;
@@ -95,13 +96,65 @@ pub fn puzzle_a(string_list: &String) -> i32 {
         .sum();
 }
 
-/// Foo
+fn page_reorder(graph: &HashSet<(i32, i32)>, page: &Vec<i32>) -> Vec<i32> {
+    info!("reordering page {:?}", page);
+    let mut result = page.clone();
+    result.sort_by(|&a, &b| {
+        if graph.contains(&(a, b)) {
+            Ordering::Less
+        } else if graph.contains(&(b, a)) {
+            Ordering::Greater
+        } else {
+            Ordering::Equal
+        }
+    });
+    info!("reordered page {:?}", page);
+    return result;
+}
+
+/// sort the wrong pages
 /// ```
 /// let vec1: Vec<String> = vec![
-///     "foo"
+///     "47|53",
+///     "97|13",
+///     "97|61",
+///     "97|47",
+///     "75|29",
+///     "61|13",
+///     "75|53",
+///     "29|13",
+///     "97|29",
+///     "53|29",
+///     "61|53",
+///     "97|53",
+///     "61|29",
+///     "47|13",
+///     "75|47",
+///     "97|75",
+///     "47|61",
+///     "75|61",
+///     "47|29",
+///     "75|13",
+///     "53|13",
+///     "",
+///     "75,47,61,53,29",
+///     "97,61,53,29,13",
+///     "75,29,13",
+///     "75,97,47,61,53",
+///     "61,13,29",
+///     "97,13,75,29,47"
 /// ].iter().map(|s| s.to_string()).collect();
-/// assert_eq!(day05::puzzle_b(&vec1.join("\n")), 0);
+
+/// assert_eq!(day05::puzzle_b(&vec1.join("\n")), 123);
 /// ```
-pub fn puzzle_b(string_list: &String) -> u32 {
-    return 0;
+pub fn puzzle_b(string_list: &String) -> i32 {
+    let groups = split_lines_by_blanks(string_list);
+    let graph = parse_graph(&groups[0]);
+    let pages = parse_pages(&groups[1]);
+    return pages
+        .into_iter()
+        .filter(|x| !page_valid(&graph, x))
+        .map(|x| page_reorder(&graph, &x))
+        .map(|x| x[x.len() / 2])
+        .sum();
 }
