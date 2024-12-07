@@ -5,9 +5,10 @@ Advent of Code for 2023 - https://adventofcode.com/2023
 
 Per day, remember to:
 ```
+cd $(git rev-parse --show-toplevel)
 git branch --set-upstream-to=origin/main
 git pull --rebase
-export day=day07
+export day=day08
 cargo new $day
 cp -r template/* $day/
 find $day -type f -exec sed -i "s/template/$day/g" {} +
