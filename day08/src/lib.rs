@@ -112,7 +112,7 @@ impl Antenna {
             // check if on grid
             let x = antinode_1_x.unwrap();
             let y = antinode_1_y.unwrap();
-            
+
             if x < grid.get_width() && y < grid.get_height() {
                 result.push(GridCoordinate::new(x, y));
             } else {
@@ -246,7 +246,8 @@ pub fn puzzle_b(string_list: &Vec<String>) -> usize {
     }
     for (i, antenna) in antennas.clone().into_iter().enumerate() {
         for j in i + 1..antennas.len() {
-            let cur_nodes: Vec<GridCoordinate> = antenna.get_continual_antinodes(&antennas[j], &map);
+            let cur_nodes: Vec<GridCoordinate> =
+                antenna.get_continual_antinodes(&antennas[j], &map);
             antinodes.extend(cur_nodes);
         }
     }
