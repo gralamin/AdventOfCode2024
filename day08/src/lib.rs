@@ -2,7 +2,7 @@ extern crate filelib;
 
 pub use filelib::load_no_blanks;
 use gridlib::GridTraversable;
-use gridlib::{Direction, Grid, GridCoordinate};
+use gridlib::{Grid, GridCoordinate};
 use log::info;
 use std::collections::HashSet;
 
@@ -72,6 +72,89 @@ impl Antenna {
         info!("Antinodes found {:?}", result);
         return result;
     }
+
+    fn get_continual_antinodes(&self, other: &Antenna, grid: &Map) -> Vec<GridCoordinate> {
+        info!("Trying to find Antinode for {:?}, {:?}", self, other);
+        let mut result: Vec<GridCoordinate> = vec![];
+        if other.frequency != self.frequency {
+            return result;
+        }
+        result.push(self.position);
+        result.push(other.position);
+        // Antinodes are twice the distance away as other is.
+        let x_diff;
+        let y_diff;
+        let mut antinode_1_x;
+        let mut antinode_1_y;
+        let mut antinode_2_x;
+        let mut antinode_2_y;
+        let self_add_x: bool = self.position.x > other.position.x;
+        let self_add_y: bool = self.position.y > other.position.y;
+        if self_add_x {
+            x_diff = self.position.x - other.position.x;
+            antinode_1_x = other.position.x.checked_sub(x_diff);
+            antinode_2_x = self.position.x.checked_add(x_diff);
+        } else {
+            x_diff = other.position.x - self.position.x;
+            antinode_1_x = other.position.x.checked_add(x_diff);
+            antinode_2_x = self.position.x.checked_sub(x_diff);
+        }
+        if self_add_y {
+            y_diff = self.position.y - other.position.y;
+            antinode_1_y = other.position.y.checked_sub(y_diff);
+            antinode_2_y = self.position.y.checked_add(y_diff);
+        } else {
+            y_diff = other.position.y - self.position.y;
+            antinode_1_y = other.position.y.checked_add(y_diff);
+            antinode_2_y = self.position.y.checked_sub(y_diff);
+        }
+        while antinode_1_x.is_some() && antinode_1_y.is_some() {
+            // check if on grid
+            let x = antinode_1_x.unwrap();
+            let y = antinode_1_y.unwrap();
+            
+            if x < grid.get_width() && y < grid.get_height() {
+                result.push(GridCoordinate::new(x, y));
+            } else {
+                // Off grid
+                break;
+            }
+            if self_add_x {
+                // this is the other x, so subtrack
+                antinode_1_x = x.checked_sub(x_diff);
+            } else {
+                antinode_1_x = x.checked_add(x_diff);
+            }
+            if self_add_y {
+                antinode_1_y = y.checked_sub(y_diff);
+            } else {
+                antinode_1_y = y.checked_add(y_diff);
+            }
+        }
+        while antinode_2_x.is_some() && antinode_2_y.is_some() {
+            // check if on grid
+            let x = antinode_2_x.unwrap();
+            let y = antinode_2_y.unwrap();
+            if x < grid.get_width() && y < grid.get_height() {
+                result.push(GridCoordinate::new(x, y));
+            } else {
+                // off grid
+                break;
+            }
+            if self_add_x {
+                antinode_2_x = x.checked_add(x_diff);
+            } else {
+                antinode_2_x = x.checked_sub(x_diff);
+            }
+            if self_add_y {
+                antinode_2_y = y.checked_add(y_diff);
+            } else {
+                antinode_2_y = y.checked_sub(y_diff);
+            }
+        }
+        info!("Antinodes found {:?}", result);
+        return result;
+    }
 }
 
 fn parse_map(string_list: &Vec<String>) -> Map {
@@ -132,15 +215,42 @@ pub fn puzzle_a(string_list: &Vec<String>) -> usize {
     return antinodes.len();
 }
 
-/// Foo
+/// Even more antinodes
 /// ```
 /// let vec1: Vec<String> = vec![
-///     "foo"
+///     "............",
+///     "........0...",
+///     ".....0......",
+///     ".......0....",
+///     "....0.......",
+///     "......A.....",
+///     "............",
+///     "............",
+///     "........A...",
+///     ".........A..",
+///     "............",
+///     "............"
 /// ].iter().map(|s| s.to_string()).collect();
-/// assert_eq!(day08::puzzle_b(&vec1), 0);
+/// assert_eq!(day08::puzzle_b(&vec1), 34);
 /// ```
-pub fn puzzle_b(string_list: &Vec<String>) -> u32 {
-    return 0;
+pub fn puzzle_b(string_list: &Vec<String>) -> usize {
+    let map = parse_map(string_list);
+    let mut antinodes = HashSet::new();
+    let mut antennas = vec![];
+    for coord in map.coord_iter() {
+        let v = map.get_value(coord).unwrap();
+        if v.is_none() {
+            continue;
+        }
+        antennas.push(v.unwrap());
+    }
+    for (i, antenna) in antennas.clone().into_iter().enumerate() {
+        for j in i + 1..antennas.len() {
+            let cur_nodes: Vec<GridCoordinate> = antenna.get_continual_antinodes(&antennas[j], &map);
+            antinodes.extend(cur_nodes);
+        }
+    }
+    return antinodes.len();
 }
 
 #[cfg(test)]
