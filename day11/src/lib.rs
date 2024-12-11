@@ -1,7 +1,8 @@
 extern crate filelib;
 
+use std::collections::HashMap;
+
 pub use filelib::load_no_blanks;
-use log::info;
 
 type Number = u64;
 
@@ -64,15 +65,54 @@ pub fn puzzle_a(string_list: &Vec<String>) -> usize {
     return cur_stone_list.len();
 }
 
-/// Foo
+// Rules: 0 -> 1
+// even digits -> Split in two, halving the number (so 1000 -> 10 and 0. 9321 becomes 93 21)
+// Otherwise number *2024
+// order perserved
+// We don't actually care about the order though, so... HashMap
+fn blink_faster(stone_state: &HashMap<Number, usize>) -> HashMap<Number, usize> {
+    let mut next_state = HashMap::new();
+
+    for (&key, &count) in stone_state {
+        let digit_count = count_digits(key);
+        if key == 0 {
+            *next_state.entry(1).or_insert(0) += count;
+        } else if digit_count % 2 == 0 {
+            // 10 -> 2 digits -> divide by 10 to split -> pow 1
+            // 1000 -> 4 digits -> divide by 100 to split -> pow 2
+            // 100000 -> 6 digits -> divide by 1000 to split -> pow 3
+            let base: Number = 10;
+            let splitter = base.pow(digit_count / 2);
+            let first = key / splitter;
+            let second = key % splitter;
+            *next_state.entry(first).or_insert(0) += count;
+            *next_state.entry(second).or_insert(0) += count;
+        } else {
+            *next_state.entry(key * 2024).or_insert(0) += count;
+        }
+    }
+
+    return next_state;
+}
+
+/// Blink 25 times and count stones
 /// ```
 /// let vec1: Vec<String> = vec![
-///     "foo"
+///     "125 17"
 /// ].iter().map(|s| s.to_string()).collect();
-/// assert_eq!(day11::puzzle_b(&vec1), 0);
+/// assert_eq!(day11::puzzle_b(&vec1), 65601038650482);
 /// ```
-pub fn puzzle_b(string_list: &Vec<String>) -> Number {
-    return 0;
+pub fn puzzle_b(string_list: &Vec<String>) -> usize {
+    let cur_stone_list = parse_stones(string_list);
+    let mut hash_state: HashMap<Number, usize> = HashMap::new();
+    for v in cur_stone_list {
+        *hash_state.entry(v).or_insert(0) += 1;
+    }
+
+    for _ in 0..75 {
+        hash_state = blink_faster(&hash_state);
+    }
+    return hash_state.values().sum();
 }
 
 #[cfg(test)]
