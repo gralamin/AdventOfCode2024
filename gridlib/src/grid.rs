@@ -105,6 +105,10 @@ pub trait GridTraversable {
         direction: Direction,
     ) -> Option<GridCoordinate>;
     fn get_adjacent_coordinates(&self, pos: GridCoordinate) -> Vec<GridCoordinate>;
+    fn get_adjacent_coordinates_and_direction(
+        &self,
+        pos: GridCoordinate,
+    ) -> Vec<(GridCoordinate, Direction)>;
     fn get_diag_adjacent_coordinates(&self, pos: GridCoordinate) -> Vec<GridCoordinate>;
 }
 
@@ -180,6 +184,31 @@ impl<T: Copy> GridTraversable for Grid<T> {
         for possible_pos in options {
             if let Some(cur_pos) = possible_pos {
                 result.push(cur_pos);
+            }
+        }
+
+        return result;
+    }
+
+    fn get_adjacent_coordinates_and_direction(
+        &self,
+        pos: GridCoordinate,
+    ) -> Vec<(GridCoordinate, Direction)> {
+        let opt_north = self.get_coordinate_by_direction(pos, Direction::NORTH);
+        let opt_east = self.get_coordinate_by_direction(pos, Direction::EAST);
+        let opt_south = self.get_coordinate_by_direction(pos, Direction::SOUTH);
+        let opt_west = self.get_coordinate_by_direction(pos, Direction::WEST);
+        let mut result: Vec<(GridCoordinate, Direction)> = Vec::new();
+        let options = vec![
+            (opt_north, Direction::NORTH),
+            (opt_east, Direction::EAST),
+            (opt_south, Direction::SOUTH),
+            (opt_west, Direction::WEST),
+        ];
+
+        for (possible_pos, dir) in options {
+            if let Some(cur_pos) = possible_pos {
+                result.push((cur_pos, dir));
             }
         }
 
@@ -316,6 +345,18 @@ mod tests {
         assert_eq!(
             grid.get_adjacent_coordinates(GridCoordinate::new(9, 4)),
             vec![GridCoordinate::new(9, 3), GridCoordinate::new(8, 4)]
+        );
+    }
+
+    #[test]
+    fn test_get_adjacent_coordinates_and_direction() {
+        let grid = produce_grid();
+        assert_eq!(
+            grid.get_adjacent_coordinates_and_direction(GridCoordinate::new(0, 0)),
+            vec![
+                (GridCoordinate::new(1, 0), Direction::EAST),
+                (GridCoordinate::new(0, 1), Direction::SOUTH)
+            ]
         );
     }
 
