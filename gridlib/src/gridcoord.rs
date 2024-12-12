@@ -201,6 +201,27 @@ mod tests {
     }
 
     #[test]
+    fn test_move_on_infinite_grid_distance() {
+        let start = GridCoordinateInf::new(0, 0);
+        let mut cur = start.move_dir_dist(Direction::NORTH, 1);
+        assert_eq!(cur, GridCoordinateInf::new(0, -1));
+        cur = cur.move_dir_dist(Direction::WEST, 1);
+        assert_eq!(cur, GridCoordinateInf::new(-1, -1));
+        cur = cur.move_dir_dist(Direction::NORTHWEST, 1);
+        assert_eq!(cur, GridCoordinateInf::new(-2, -2));
+        cur = cur.move_dir_dist(Direction::NORTHEAST, 1);
+        assert_eq!(cur, GridCoordinateInf::new(-1, -3));
+        cur = cur.move_dir_dist(Direction::EAST, 1);
+        assert_eq!(cur, GridCoordinateInf::new(-0, -3));
+        cur = cur.move_dir_dist(Direction::SOUTH, 1);
+        assert_eq!(cur, GridCoordinateInf::new(0, -2));
+        cur = cur.move_dir_dist(Direction::SOUTHEAST, 1);
+        assert_eq!(cur, GridCoordinateInf::new(1, -1));
+        cur = cur.move_dir_dist(Direction::SOUTHWEST, 1);
+        assert_eq!(cur, GridCoordinateInf::new(0, 0));
+    }
+
+    #[test]
     fn test_move_on_infinite_grid64() {
         let start = GridCoordinateInf64::new(0, 0);
         let mut cur = start.move_dir(Direction::NORTH);
