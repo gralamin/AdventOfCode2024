@@ -11,4 +11,5 @@ pub use crate::direction::Direction;
 mod grid;
 
 pub use crate::grid::Grid;
+pub use crate::grid::GridRotation;
 pub use crate::grid::GridTraversable;

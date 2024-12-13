@@ -46,12 +46,12 @@ impl PartialOrd for GridCoordinate {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct GridCoordinateInf<T: Clone + Copy + Add<Output = T> + From<i32>> {
+pub struct GridCoordinateInf<T: Clone + Copy + Add<Output = T> + From<i32> + Ord> {
     pub x: T,
     pub y: T,
 }
 
-impl<T: Clone + Copy + Add<Output = T> + From<i32>> std::ops::Add for GridCoordinateInf<T> {
+impl<T: Clone + Copy + Add<Output = T> + From<i32> + Ord> std::ops::Add for GridCoordinateInf<T> {
     type Output = GridCoordinateInf<T>;
 
     fn add(self, other: GridCoordinateInf<T>) -> GridCoordinateInf<T> {
@@ -62,7 +62,7 @@ impl<T: Clone + Copy + Add<Output = T> + From<i32>> std::ops::Add for GridCoordi
     }
 }
 
-impl<T: Clone + Copy + Add<Output = T> + From<i32>> GridCoordinateInf<T> {
+impl<T: Clone + Copy + Add<Output = T> + From<i32> + Ord> GridCoordinateInf<T> {
     pub fn new(x: T, y: T) -> GridCoordinateInf<T> {
         return GridCoordinateInf { x: x, y: y };
     }
@@ -89,7 +89,7 @@ impl<T: Clone + Copy + Add<Output = T> + From<i32>> GridCoordinateInf<T> {
             };
     }
 }
-impl<T: Clone + Copy + Add<Output = T> + From<i32> + std::ops::Mul<Output = T>>
+impl<T: Clone + Copy + Add<Output = T> + From<i32> + std::ops::Mul<Output = T> + Ord>
     GridCoordinateInf<T>
 {
     pub fn move_dir_dist(&self, direction: Direction, distance: T) -> GridCoordinateInf<T> {
@@ -115,9 +115,25 @@ impl<T: Clone + Copy + Add<Output = T> + From<i32> + std::ops::Mul<Output = T>>
     }
 }
 
-impl<T: Clone + Copy + Add<Output = T> + From<i32> + Display> Display for GridCoordinateInf<T> {
+impl<T: Clone + Copy + Add<Output = T> + From<i32> + Display + Ord> Display
+    for GridCoordinateInf<T>
+{
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         return write!(f, "({}, {})", self.x, self.y);
+    }
+}
+
+impl<T: Clone + Copy + Add<Output = T> + From<i32> + Ord> Ord for GridCoordinateInf<T> {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        // You can customize the ordering logic here.
+        // For example, you might prioritize y-coordinate, then x-coordinate:
+        self.y.cmp(&other.y).then_with(|| self.x.cmp(&other.x))
+    }
+}
+
+impl<T: Clone + Copy + Add<Output = T> + From<i32> + Ord> PartialOrd for GridCoordinateInf<T> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
     }
 }
 
@@ -197,6 +213,27 @@ mod tests {
         cur = cur.move_dir(Direction::SOUTHEAST);
         assert_eq!(cur, GridCoordinateInf::new(1, -1));
         cur = cur.move_dir(Direction::SOUTHWEST);
+        assert_eq!(cur, GridCoordinateInf::new(0, 0));
+    }
+
+    #[test]
+    fn test_move_on_infinite_grid_distance() {
+        let start = GridCoordinateInf::new(0, 0);
+        let mut cur = start.move_dir_dist(Direction::NORTH, 1);
+        assert_eq!(cur, GridCoordinateInf::new(0, -1));
+        cur = cur.move_dir_dist(Direction::WEST, 1);
+        assert_eq!(cur, GridCoordinateInf::new(-1, -1));
+        cur = cur.move_dir_dist(Direction::NORTHWEST, 1);
+        assert_eq!(cur, GridCoordinateInf::new(-2, -2));
+        cur = cur.move_dir_dist(Direction::NORTHEAST, 1);
+        assert_eq!(cur, GridCoordinateInf::new(-1, -3));
+        cur = cur.move_dir_dist(Direction::EAST, 1);
+        assert_eq!(cur, GridCoordinateInf::new(-0, -3));
+        cur = cur.move_dir_dist(Direction::SOUTH, 1);
+        assert_eq!(cur, GridCoordinateInf::new(0, -2));
+        cur = cur.move_dir_dist(Direction::SOUTHEAST, 1);
+        assert_eq!(cur, GridCoordinateInf::new(1, -1));
+        cur = cur.move_dir_dist(Direction::SOUTHWEST, 1);
         assert_eq!(cur, GridCoordinateInf::new(0, 0));
     }
 

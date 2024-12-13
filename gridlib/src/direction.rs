@@ -1,4 +1,5 @@
 use std::fmt::{Display, Formatter};
+use std::slice::Iter;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum Direction {
@@ -25,6 +26,42 @@ impl Display for Direction {
             Direction::NORTHWEST => "NORTHWEST",
         };
         return write!(f, "{}", s);
+    }
+}
+
+impl Direction {
+    pub fn cardinal_iterator() -> Iter<'static, Direction> {
+        static DIRECTIONS: [Direction; 4] = [
+            Direction::NORTH,
+            Direction::EAST,
+            Direction::SOUTH,
+            Direction::WEST,
+        ];
+        return DIRECTIONS.iter();
+    }
+
+    pub fn diagonal_iterator() -> Iter<'static, Direction> {
+        static DIRECTIONS: [Direction; 4] = [
+            Direction::NORTHEAST,
+            Direction::SOUTHEAST,
+            Direction::SOUTHWEST,
+            Direction::NORTHWEST,
+        ];
+        DIRECTIONS.iter()
+    }
+
+    pub fn iterator() -> Iter<'static, Direction> {
+        static DIRECTIONS: [Direction; 8] = [
+            Direction::NORTH,
+            Direction::NORTHEAST,
+            Direction::EAST,
+            Direction::SOUTHEAST,
+            Direction::SOUTH,
+            Direction::SOUTHWEST,
+            Direction::WEST,
+            Direction::NORTHWEST,
+        ];
+        DIRECTIONS.iter()
     }
 }
 

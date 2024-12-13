@@ -50,6 +50,21 @@ impl<T: Copy> Grid<T> {
     {
         return self.values.clone();
     }
+
+    fn coord_direction_iterator(
+        &self,
+        pos: GridCoordinate,
+        direction_iter: std::slice::Iter<Direction>,
+    ) -> Vec<(GridCoordinate, Direction)> {
+        let mut result: Vec<(GridCoordinate, Direction)> = Vec::new();
+        for &direction in direction_iter {
+            let coord = self.get_coordinate_by_direction(pos, direction);
+            if let Some(cur_pos) = coord {
+                result.push((cur_pos, direction));
+            }
+        }
+        return result;
+    }
 }
 
 impl<T: Clone + Copy> Clone for Grid<T> {
@@ -110,6 +125,15 @@ pub trait GridTraversable {
         pos: GridCoordinate,
     ) -> Vec<(GridCoordinate, Direction)>;
     fn get_diag_adjacent_coordinates(&self, pos: GridCoordinate) -> Vec<GridCoordinate>;
+    fn get_diag_adjacent_coordinates_and_direction(
+        &self,
+        pos: GridCoordinate,
+    ) -> Vec<(GridCoordinate, Direction)>;
+    fn get_all_adjacent_coordinates(&self, pos: GridCoordinate) -> Vec<GridCoordinate>;
+    fn get_all_adjacent_coordinates_and_direction(
+        &self,
+        pos: GridCoordinate,
+    ) -> Vec<(GridCoordinate, Direction)>;
 }
 
 impl<T: Copy> GridTraversable for Grid<T> {
@@ -174,67 +198,48 @@ impl<T: Copy> GridTraversable for Grid<T> {
     }
 
     fn get_adjacent_coordinates(&self, pos: GridCoordinate) -> Vec<GridCoordinate> {
-        let opt_north = self.get_coordinate_by_direction(pos, Direction::NORTH);
-        let opt_east = self.get_coordinate_by_direction(pos, Direction::EAST);
-        let opt_south = self.get_coordinate_by_direction(pos, Direction::SOUTH);
-        let opt_west = self.get_coordinate_by_direction(pos, Direction::WEST);
-        let mut result: Vec<GridCoordinate> = Vec::new();
-        let options = vec![opt_north, opt_east, opt_south, opt_west];
-
-        for possible_pos in options {
-            if let Some(cur_pos) = possible_pos {
-                result.push(cur_pos);
-            }
-        }
-
-        return result;
+        return self
+            .coord_direction_iterator(pos, Direction::cardinal_iterator())
+            .into_iter()
+            .map(|x| x.0)
+            .collect();
     }
 
     fn get_adjacent_coordinates_and_direction(
         &self,
         pos: GridCoordinate,
     ) -> Vec<(GridCoordinate, Direction)> {
-        let opt_north = self.get_coordinate_by_direction(pos, Direction::NORTH);
-        let opt_east = self.get_coordinate_by_direction(pos, Direction::EAST);
-        let opt_south = self.get_coordinate_by_direction(pos, Direction::SOUTH);
-        let opt_west = self.get_coordinate_by_direction(pos, Direction::WEST);
-        let mut result: Vec<(GridCoordinate, Direction)> = Vec::new();
-        let options = vec![
-            (opt_north, Direction::NORTH),
-            (opt_east, Direction::EAST),
-            (opt_south, Direction::SOUTH),
-            (opt_west, Direction::WEST),
-        ];
-
-        for (possible_pos, dir) in options {
-            if let Some(cur_pos) = possible_pos {
-                result.push((cur_pos, dir));
-            }
-        }
-
-        return result;
+        return self.coord_direction_iterator(pos, Direction::cardinal_iterator());
     }
 
     fn get_diag_adjacent_coordinates(&self, pos: GridCoordinate) -> Vec<GridCoordinate> {
-        let opt_north_east = self.get_coordinate_by_direction(pos, Direction::NORTHEAST);
-        let opt_south_east = self.get_coordinate_by_direction(pos, Direction::SOUTHEAST);
-        let opt_south_west = self.get_coordinate_by_direction(pos, Direction::SOUTHWEST);
-        let opt_north_west = self.get_coordinate_by_direction(pos, Direction::NORTHWEST);
-        let mut result: Vec<GridCoordinate> = Vec::new();
-        let options = vec![
-            opt_north_east,
-            opt_south_east,
-            opt_south_west,
-            opt_north_west,
-        ];
+        return self
+            .coord_direction_iterator(pos, Direction::diagonal_iterator())
+            .into_iter()
+            .map(|x| x.0)
+            .collect();
+    }
 
-        for possible_pos in options {
-            if let Some(cur_pos) = possible_pos {
-                result.push(cur_pos);
-            }
-        }
+    fn get_diag_adjacent_coordinates_and_direction(
+        &self,
+        pos: GridCoordinate,
+    ) -> Vec<(GridCoordinate, Direction)> {
+        return self.coord_direction_iterator(pos, Direction::diagonal_iterator());
+    }
 
-        return result;
+    fn get_all_adjacent_coordinates(&self, pos: GridCoordinate) -> Vec<GridCoordinate> {
+        return self
+            .coord_direction_iterator(pos, Direction::iterator())
+            .into_iter()
+            .map(|x| x.0)
+            .collect();
+    }
+
+    fn get_all_adjacent_coordinates_and_direction(
+        &self,
+        pos: GridCoordinate,
+    ) -> Vec<(GridCoordinate, Direction)> {
+        return self.coord_direction_iterator(pos, Direction::iterator());
     }
 }
 
@@ -378,6 +383,41 @@ mod tests {
         assert_eq!(
             grid.get_diag_adjacent_coordinates(GridCoordinate::new(9, 4)),
             vec![GridCoordinate::new(8, 3)]
+        );
+    }
+
+    #[test]
+    fn test_get_diag_adjacent_coordinates_and_directions() {
+        let grid = produce_grid();
+        assert_eq!(
+            grid.get_diag_adjacent_coordinates_and_direction(GridCoordinate::new(0, 0)),
+            vec![(GridCoordinate::new(1, 1), Direction::SOUTHEAST)]
+        );
+    }
+
+    #[test]
+    fn test_all_adjacent_coordinates_and_directions() {
+        let grid = produce_grid();
+        assert_eq!(
+            grid.get_all_adjacent_coordinates_and_direction(GridCoordinate::new(0, 0)),
+            vec![
+                (GridCoordinate { x: 1, y: 0 }, Direction::EAST),
+                (GridCoordinate { x: 1, y: 1 }, Direction::SOUTHEAST),
+                (GridCoordinate { x: 0, y: 1 }, Direction::SOUTH)
+            ]
+        );
+    }
+
+    #[test]
+    fn test_all_adjacent_coordinates() {
+        let grid = produce_grid();
+        assert_eq!(
+            grid.get_all_adjacent_coordinates(GridCoordinate::new(0, 0)),
+            vec![
+                GridCoordinate { x: 1, y: 0 },
+                GridCoordinate { x: 1, y: 1 },
+                GridCoordinate { x: 0, y: 1 }
+            ]
         );
     }
 
