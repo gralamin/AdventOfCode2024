@@ -4,7 +4,8 @@ pub use filelib::{load, split_lines_by_blanks};
 use gridlib::GridCoordinateInf;
 use log::info;
 
-type Coord = GridCoordinateInf<i32>;
+type Number = i64;
+type Coord = GridCoordinateInf<Number>;
 
 fn parse_prize_machines(string_list: &Vec<Vec<String>>) -> Vec<(Coord, Coord, Coord)> {
     let mut result = vec![];
@@ -42,10 +43,10 @@ fn find_cheapest_button_presses(
     a_button: Coord,
     b_button: Coord,
     prize: Coord,
-    max_press: i32,
-    a_price: i32,
-    b_price: i32,
-) -> Option<u32> {
+    max_press: Number,
+    a_price: Number,
+    b_price: Number,
+) -> Option<u64> {
     // We want to treat this as a linear algebra problem
     // to find solutions we need to solve
     /*
@@ -80,7 +81,7 @@ fn find_cheapest_button_presses(
     let check_works_y = a_button.y * a_press_count + b_button.y * b_press_count;
     if check_works_x == prize.x && check_works_y == prize.y {
         info!("Found {:?}", cost);
-        return Some(cost as u32);
+        return Some(cost as u64);
     }
     // Otherwise the answer is not an integer
     info!("Solution not positive integer");
@@ -108,7 +109,7 @@ fn find_cheapest_button_presses(
 /// ].iter().map(|s| s.to_string()).collect()];
 /// assert_eq!(day13::puzzle_a(&vec1), 480);
 /// ```
-pub fn puzzle_a(string_list: &Vec<Vec<String>>) -> u32 {
+pub fn puzzle_a(string_list: &Vec<Vec<String>>) -> u64 {
     let a_cost = 3;
     let b_cost = 1;
     let max_press = 100;
@@ -124,13 +125,41 @@ pub fn puzzle_a(string_list: &Vec<Vec<String>>) -> u32 {
     return total_cost;
 }
 
-/// Foo
+/// As above, but infinite presses and each prize is an absurd distance away
 /// ```
 /// let vec1: Vec<Vec<String>> = vec![vec![
-///     "foo"
+///     "Button A: X+94, Y+34",
+///     "Button B: X+22, Y+67",
+///     "Prize: X=8400, Y=5400",
+///     ].iter().map(|s| s.to_string()).collect(), vec![
+///     "Button A: X+26, Y+66",
+///     "Button B: X+67, Y+21",
+///     "Prize: X=12748, Y=12176",
+///     ].iter().map(|s| s.to_string()).collect(), vec![
+///     "Button A: X+17, Y+86",
+///     "Button B: X+84, Y+37",
+///     "Prize: X=7870, Y=6450",
+///     ].iter().map(|s| s.to_string()).collect(), vec![
+///     "Button A: X+69, Y+23",
+///     "Button B: X+27, Y+71",
+///     "Prize: X=18641, Y=10279"
 /// ].iter().map(|s| s.to_string()).collect()];
-/// assert_eq!(day13::puzzle_b(&vec1), 0);
+/// assert_eq!(day13::puzzle_b(&vec1), 875318608908);
 /// ```
-pub fn puzzle_b(string_list: &Vec<Vec<String>>) -> u32 {
-    return 0;
+pub fn puzzle_b(string_list: &Vec<Vec<String>>) -> u64 {
+    let adjustment = 10000000000000;
+    let a_cost = 3;
+    let b_cost = 1;
+    let max_press = Number::MAX;
+    let mut total_cost: u64 = 0;
+    let prizes = parse_prize_machines(string_list);
+    for (a_button, b_button, prize) in prizes {
+        let true_prize = Coord::new(adjustment + prize.x, adjustment + prize.y);
+        let result =
+            find_cheapest_button_presses(a_button, b_button, true_prize, max_press, a_cost, b_cost);
+        if let Some(cost) = result {
+            total_cost += cost;
+        }
+    }
+    return total_cost;
 }
