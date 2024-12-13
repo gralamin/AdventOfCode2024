@@ -115,7 +115,9 @@ impl<T: Clone + Copy + Add<Output = T> + From<i32> + std::ops::Mul<Output = T> +
     }
 }
 
-impl<T: Clone + Copy + Add<Output = T> + From<i32> + Display + Ord> Display for GridCoordinateInf<T> {
+impl<T: Clone + Copy + Add<Output = T> + From<i32> + Display + Ord> Display
+    for GridCoordinateInf<T>
+{
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         return write!(f, "({}, {})", self.x, self.y);
     }
@@ -125,8 +127,7 @@ impl<T: Clone + Copy + Add<Output = T> + From<i32> + Ord> Ord for GridCoordinate
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         // You can customize the ordering logic here.
         // For example, you might prioritize y-coordinate, then x-coordinate:
-        self.y.cmp(&other.y)
-            .then_with(|| self.x.cmp(&other.x))
+        self.y.cmp(&other.y).then_with(|| self.x.cmp(&other.x))
     }
 }
 
