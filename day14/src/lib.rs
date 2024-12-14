@@ -121,7 +121,7 @@ pub fn puzzle_a(string_list: &Vec<String>, height: usize, width: usize) -> usize
 ///     "p=2,4 v=2,-3",
 ///     "p=9,5 v=-3,-3"
 /// ].iter().map(|s| s.to_string()).collect();
-/// assert_eq!(day14::puzzle_b(&vec1, 7, 11), 1);
+/// assert_eq!(day14::puzzle_b(&vec1, 7, 11), 5);
 /// ```
 pub fn puzzle_b(string_list: &Vec<String>, height: usize, width: usize) -> usize {
     let values = parse_robots(string_list);
