@@ -7,7 +7,9 @@ fn main() {
     let filename = "input";
     let lines = load_no_blanks(filename);
 
-    let value = puzzle_a(&lines);
+    let height = 103;
+    let width = 101;
+    let value = puzzle_a(&lines, height, width);
     println!("Answer to 1st question: {}", value);
 
     let value_b = puzzle_b(&lines);
