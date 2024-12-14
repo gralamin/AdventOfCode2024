@@ -105,13 +105,51 @@ pub fn puzzle_a(string_list: &Vec<String>, height: usize, width: usize) -> usize
         .product();
 }
 
+// guessing that the tree needs a lot of robots in unique positions?
+fn get_num_unique(positions: Vec<Coord>) -> usize {
+    let mut robots = positions.clone();
+    robots.sort();
+    robots.dedup();
+    return robots.len();
+}
+
 /// Find an iteration that looks like a Christmas tree??? How do I define that???
 /// ```
 /// let vec1: Vec<String> = vec![
-///     "foo"
+///     "p=0,4 v=3,-3",
+///     "p=6,3 v=-1,-3",
+///     "p=10,3 v=-1,2",
+///     "p=2,0 v=2,-1",
+///     "p=0,0 v=1,3",
+///     "p=3,0 v=-2,-2",
+///     "p=7,6 v=-1,-3",
+///     "p=3,0 v=-1,-2",
+///     "p=9,3 v=2,3",
+///     "p=7,3 v=-1,2",
+///     "p=2,4 v=2,-3",
+///     "p=9,5 v=-3,-3"
 /// ].iter().map(|s| s.to_string()).collect();
-/// assert_eq!(day14::puzzle_b(&vec1), 0);
+/// assert_eq!(day14::puzzle_b(&vec1, 7, 11), 1);
 /// ```
-pub fn puzzle_b(string_list: &Vec<String>) -> u32 {
-    return 0;
+pub fn puzzle_b(string_list: &Vec<String>, height: usize, width: usize) -> usize {
+    let values = parse_robots(string_list);
+
+    let mut max_value = 0;
+    let mut max_i: usize = 0;
+
+    // Okay lets think about this
+    // 103 * 101 = 10403 is the max number of possible spaces, things will definitely loop by then, so thats an upper bound.
+    for i in 1..=(width * height) {
+        let final_locations = values
+            .clone()
+            .into_iter()
+            .map(|(pos, vec)| find_pos(pos, vec, width, height, i as Number))
+            .collect();
+        let num_pos = get_num_unique(final_locations);
+        if num_pos > max_value {
+            max_value = num_pos;
+            max_i = i;
+        }
+    }
+    return max_i;
 }
