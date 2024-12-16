@@ -1,5 +1,5 @@
-# AdventOfCode2023
-Advent of Code for 2023 - https://adventofcode.com/2023
+# AdventOfCode2024
+Advent of Code for 2024 - https://adventofcode.com/2023
 
 ## Creating a new date executable
 
@@ -8,7 +8,7 @@ Per day, remember to:
 cd $(git rev-parse --show-toplevel)
 git branch --set-upstream-to=origin/main
 git pull --rebase
-export day=day15
+export day=day16
 cargo new $day
 cp -r template/* $day/
 find $day -type f -exec sed -i "s/template/$day/g" {} +
