@@ -283,6 +283,33 @@ pub trait GridOverlay: GridPrintable {
     fn get_position(&self) -> GridCoordinate;
 }
 
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+pub struct SimpleGridOverlay {
+    character: char,
+    position: GridCoordinate,
+}
+
+impl GridOverlay for SimpleGridOverlay {
+    fn get_position(&self) -> GridCoordinate {
+        return self.position;
+    }
+}
+
+impl GridPrintable for SimpleGridOverlay {
+    fn get_character(&self) -> char {
+        return self.character;
+    }
+}
+
+impl SimpleGridOverlay {
+    pub fn new(c: char, pos: GridCoordinate) -> SimpleGridOverlay {
+        return SimpleGridOverlay {
+            character: c,
+            position: pos,
+        };
+    }
+}
+
 impl<T: Copy + GridPrintable> Grid<T> {
     pub fn grid_strings(&self) -> Vec<String> {
         let mut values = vec!['X'; self.get_height() * self.get_width()];

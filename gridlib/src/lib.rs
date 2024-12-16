@@ -15,3 +15,4 @@ pub use crate::grid::GridOverlay;
 pub use crate::grid::GridPrintable;
 pub use crate::grid::GridRotation;
 pub use crate::grid::GridTraversable;
+pub use crate::grid::SimpleGridOverlay;
