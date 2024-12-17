@@ -269,6 +269,103 @@ impl<T: Copy> GridRotation for Grid<T> {
     }
 }
 
+pub trait GridPrintable {
+    fn get_character(&self) -> char;
+}
+
+impl GridPrintable for char {
+    fn get_character(&self) -> char {
+        return self.clone();
+    }
+}
+
+pub trait GridOverlay: GridPrintable {
+    fn get_position(&self) -> GridCoordinate;
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+pub struct SimpleGridOverlay {
+    character: char,
+    position: GridCoordinate,
+}
+
+impl GridOverlay for SimpleGridOverlay {
+    fn get_position(&self) -> GridCoordinate {
+        return self.position;
+    }
+}
+
+impl GridPrintable for SimpleGridOverlay {
+    fn get_character(&self) -> char {
+        return self.character;
+    }
+}
+
+impl SimpleGridOverlay {
+    pub fn new(c: char, pos: GridCoordinate) -> SimpleGridOverlay {
+        return SimpleGridOverlay {
+            character: c,
+            position: pos,
+        };
+    }
+}
+
+impl<T: Copy + GridPrintable> Grid<T> {
+    pub fn grid_strings(&self) -> Vec<String> {
+        let mut values = vec!['X'; self.get_height() * self.get_width()];
+        let width = self.get_width();
+        for coord in self.coord_iter() {
+            let v = self.get_value(coord).unwrap();
+            let index = coord.x + coord.y * width;
+            values[index] = v.get_character();
+        }
+
+        let mut lines = vec![];
+        for (x, c) in values.into_iter().enumerate() {
+            if x % width == 0 {
+                lines.push(vec![]);
+            }
+            lines.last_mut().unwrap().push(c);
+        }
+        return lines
+            .into_iter()
+            .map(|line| line.into_iter().collect::<String>())
+            .collect();
+    }
+
+    pub fn grid_strings_with_overlay<J, I>(&self, overlay: I) -> Vec<String>
+    where
+        J: GridOverlay,
+        I: IntoIterator<Item = J>,
+    {
+        let mut values = vec!['X'; self.get_height() * self.get_width()];
+        let width = self.get_width();
+        for coord in self.coord_iter() {
+            let v = self.get_value(coord).unwrap();
+            let index = coord.x + coord.y * width;
+            values[index] = v.get_character();
+        }
+
+        for v in overlay {
+            let coord = v.get_position();
+            let index = coord.x + coord.y * width;
+            values[index] = v.get_character();
+        }
+
+        let mut lines = vec![];
+        for (x, c) in values.into_iter().enumerate() {
+            if x % width == 0 {
+                lines.push(vec![]);
+            }
+            lines.last_mut().unwrap().push(c);
+        }
+        return lines
+            .into_iter()
+            .map(|line| line.into_iter().collect::<String>())
+            .collect();
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -473,5 +570,129 @@ mod tests {
                 9, 4, 5, 6, 9, 4, 3, 6, 7, 8, 9, 2, 7, 8, 9, 2, 1, 8, 9, 2, 1, 0
             ]
         );
+    }
+
+    #[test]
+    fn test_print_grid() {
+        #[derive(Copy, Clone, Debug)]
+        struct TestValue {
+            c: char,
+        }
+        impl GridPrintable for TestValue {
+            fn get_character(&self) -> char {
+                return self.c;
+            }
+        }
+
+        let grid_values = vec![
+            TestValue { c: '+' },
+            TestValue { c: '-' },
+            TestValue { c: '-' },
+            TestValue { c: '-' },
+            TestValue { c: '+' },
+            TestValue { c: '|' },
+            TestValue { c: '.' },
+            TestValue { c: '.' },
+            TestValue { c: '.' },
+            TestValue { c: '|' },
+            TestValue { c: '|' },
+            TestValue { c: '.' },
+            TestValue { c: 'C' },
+            TestValue { c: '.' },
+            TestValue { c: '|' },
+            TestValue { c: '|' },
+            TestValue { c: '.' },
+            TestValue { c: '.' },
+            TestValue { c: '.' },
+            TestValue { c: '|' },
+            TestValue { c: '+' },
+            TestValue { c: '-' },
+            TestValue { c: '-' },
+            TestValue { c: '-' },
+            TestValue { c: '+' },
+        ];
+        let grid = Grid::new(5, 5, grid_values);
+        let strings = grid.grid_strings().join("\n");
+        assert_eq!(strings, "+---+\n|...|\n|.C.|\n|...|\n+---+");
+    }
+
+    #[test]
+    fn test_print_grid_overlay() {
+        #[derive(Copy, Clone, Debug)]
+        struct TestValue {
+            c: char,
+        }
+
+        impl GridPrintable for TestValue {
+            fn get_character(&self) -> char {
+                return self.c;
+            }
+        }
+
+        #[derive(Copy, Clone, Debug)]
+        struct Overlay {
+            coord: GridCoordinate,
+        }
+
+        impl GridPrintable for Overlay {
+            fn get_character(&self) -> char {
+                return '@';
+            }
+        }
+
+        impl GridOverlay for Overlay {
+            fn get_position(&self) -> GridCoordinate {
+                return self.coord;
+            }
+        }
+
+        let grid_values = vec![
+            TestValue { c: '+' },
+            TestValue { c: '-' },
+            TestValue { c: '-' },
+            TestValue { c: '-' },
+            TestValue { c: '+' },
+            TestValue { c: '|' },
+            TestValue { c: '.' },
+            TestValue { c: '.' },
+            TestValue { c: '.' },
+            TestValue { c: '|' },
+            TestValue { c: '|' },
+            TestValue { c: '.' },
+            TestValue { c: 'C' },
+            TestValue { c: '.' },
+            TestValue { c: '|' },
+            TestValue { c: '|' },
+            TestValue { c: '.' },
+            TestValue { c: '.' },
+            TestValue { c: '.' },
+            TestValue { c: '|' },
+            TestValue { c: '+' },
+            TestValue { c: '-' },
+            TestValue { c: '-' },
+            TestValue { c: '-' },
+            TestValue { c: '+' },
+        ];
+        let grid = Grid::new(5, 5, grid_values);
+        let overlay = vec![
+            Overlay {
+                coord: GridCoordinate::new(1, 1),
+            },
+            Overlay {
+                coord: GridCoordinate::new(1, 2),
+            },
+            Overlay {
+                coord: GridCoordinate::new(2, 2),
+            },
+            Overlay {
+                coord: GridCoordinate::new(0, 1),
+            },
+            Overlay {
+                coord: GridCoordinate::new(3, 4),
+            },
+        ];
+
+        let strings = grid.grid_strings_with_overlay(overlay).join("\n");
+        assert_eq!(strings, "+---+\n@@..|\n|@@.|\n|...|\n+--@+");
     }
 }

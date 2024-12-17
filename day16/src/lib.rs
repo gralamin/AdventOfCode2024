@@ -7,6 +7,8 @@ use std::collections::HashSet;
 use std::u32;
 
 pub use filelib::load_no_blanks;
+use gridlib::GridPrintable;
+use gridlib::SimpleGridOverlay;
 use gridlib::{Direction, Grid, GridCoordinate, GridTraversable};
 use log::info;
 
@@ -18,6 +20,15 @@ type PathStep = (Coord, Direction);
 enum Terrain {
     Wall,
     Empty,
+}
+
+impl GridPrintable for Terrain {
+    fn get_character(&self) -> char {
+        return match self {
+            Self::Wall => '#',
+            Self::Empty => '.',
+        };
+    }
 }
 
 // Implement a custom Queue state to handle priority queue aspects
@@ -199,28 +210,10 @@ pub fn puzzle_a(string_list: &Vec<String>) -> u32 {
 }
 
 fn print_best_steps(map: &Map, best_route: &HashSet<Coord>) {
-    let mut values = vec!['.'; map.get_height() * map.get_width()];
-    let width = map.get_width();
-    for coord in map.coord_iter() {
-        let v = map.get_value(coord).unwrap();
-        if v == Terrain::Wall {
-            values[coord.x + coord.y * width] = '#';
-        }
-    }
-    for coord in best_route {
-        values[coord.x + coord.y * width] = 'O';
-    }
-
-    let mut lines = vec![];
-    for (x, c) in values.into_iter().enumerate() {
-        if x % width == 0 {
-            lines.push(vec![]);
-        }
-        lines.last_mut().unwrap().push(c);
-    }
+    let overlay = best_route.iter().map(|x| SimpleGridOverlay::new('O', *x));
+    let lines = map.grid_strings_with_overlay(overlay);
     for line in lines {
-        let str: String = line.into_iter().collect();
-        info!("{}", str);
+        info!("{}", line);
     }
     info!("----");
     info!("");
