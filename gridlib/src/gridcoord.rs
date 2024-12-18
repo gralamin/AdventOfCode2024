@@ -1,6 +1,5 @@
 pub use crate::direction::Direction;
 
-
 use std::cmp::Ordering;
 use std::fmt::{Display, Formatter};
 use std::ops::Add;
