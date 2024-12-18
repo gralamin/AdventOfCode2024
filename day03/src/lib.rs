@@ -4,10 +4,10 @@ pub use filelib::load_no_blanks;
 use log::info;
 use regex::Regex;
 
-fn extract_whole_muls(corruptInput: &Vec<String>) -> Vec<(i32, i32)> {
+fn extract_whole_muls(corrupt_input: &Vec<String>) -> Vec<(i32, i32)> {
     let mut result = vec![];
     let extract_mul_regex = Regex::new(r"mul\((\d+),(\d+)\)").unwrap();
-    for line in corruptInput {
+    for line in corrupt_input {
         for capture in extract_mul_regex.captures_iter(line) {
             let (_, [a_s, b_s]) = capture.extract();
             info!("captured: {:?}, {:?}", a_s, b_s);
