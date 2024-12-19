@@ -8,7 +8,7 @@ Per day, remember to:
 cd $(git rev-parse --show-toplevel)
 git branch --set-upstream-to=origin/main
 git pull --rebase
-export day=day18
+export day=day19
 cargo new $day
 cp -r template/* $day/
 find $day -type f -exec sed -i "s/template/$day/g" {} +
