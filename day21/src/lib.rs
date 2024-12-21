@@ -1,6 +1,6 @@
 extern crate filelib;
 
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{HashMap, VecDeque};
 
 pub use filelib::load_no_blanks;
 use gridlib::{Direction, Grid, GridCoordinate, GridTraversable};
@@ -14,7 +14,7 @@ enum Button {
     DirButton(Direction),
 }
 
-type Cache = HashMap<(Button, Button, usize), Vec<Button>>;
+type Cache = HashMap<(Button, Button, usize), usize>;
 
 // In example num levels is 3
 // level 3 = key pad
@@ -26,7 +26,7 @@ fn key_pad_get_path_from_button_to_button(
     e: Button,
     num_levels: usize,
     cache: &mut Cache,
-) -> Vec<Button> {
+) -> usize {
     // 7, 8, 9
     // 4, 5, 6
     // 1, 2, 3
@@ -51,7 +51,6 @@ fn key_pad_get_path_from_button_to_button(
     );
     let mut queue: VecDeque<(GridCoordinate, Vec<Direction>)> = VecDeque::new();
     let mut cheapest_length = usize::MAX;
-    let mut cheapest_path: Vec<Button> = vec![];
 
     // For this BFS instead of visited, we just always want to move towards the goal
     // which will filter us instead.
@@ -77,13 +76,8 @@ fn key_pad_get_path_from_button_to_button(
             required_path.push(Button::Activate);
             let indirect_path =
                 cheapest_indirect_path(required_path.clone(), num_levels - 1, cache);
-            if indirect_path.len() < cheapest_length {
-                info!(
-                    "Cheapest path for {:?} to {:?} so far {:?}",
-                    s, e, required_path
-                );
-                cheapest_length = indirect_path.len();
-                cheapest_path = indirect_path;
+            if indirect_path < cheapest_length {
+                cheapest_length = indirect_path;
             }
             continue;
         }
@@ -117,29 +111,33 @@ fn key_pad_get_path_from_button_to_button(
             }
         }
     }
-    return cheapest_path;
+    return cheapest_length;
 }
 
-fn cheapest_indirect_path(
-    required_path: Vec<Button>,
-    level: usize,
-    cache: &mut Cache,
-) -> Vec<Button> {
+fn cheapest_indirect_path(required_path: Vec<Button>, level: usize, cache: &mut Cache) -> usize {
     // level 0 is you
     if level == 0 {
-        return required_path;
+        return required_path.len();
     }
+
     let start = Button::Activate;
     let mut last_button = start;
-    let mut total_path = vec![];
+    let mut total_length = 0;
     for button in required_path {
-        let path =
-            direction_key_pad_get_path_from_button_to_button(last_button, button, level, cache);
-        total_path.extend(path);
+        let key = (last_button, button, level);
+        if cache.contains_key(&key) {
+            let cached = cache.get(&key).unwrap();
+            total_length += cached;
+        } else {
+            let path =
+                direction_key_pad_get_path_from_button_to_button(last_button, button, level, cache);
+            total_length += path;
+            cache.insert(key, path);
+        }
         last_button = button;
     }
 
-    return total_path;
+    return total_length;
 }
 
 fn direction_key_pad_get_path_from_button_to_button(
@@ -147,12 +145,7 @@ fn direction_key_pad_get_path_from_button_to_button(
     e: Button,
     level: usize,
     cache: &mut Cache,
-) -> Vec<Button> {
-    let key = (s, e, level);
-    if cache.contains_key(&key) {
-        return cache.get(&key).unwrap().clone();
-    }
-
+) -> usize {
     // _, North, A
     // West, South, East
     let grid = Grid::new(
@@ -168,7 +161,6 @@ fn direction_key_pad_get_path_from_button_to_button(
         ],
     );
     let mut queue: VecDeque<(GridCoordinate, Vec<Direction>)> = VecDeque::new();
-    let mut cheapest_path = vec![];
     let mut cheapest_cost = usize::MAX;
 
     // For this BFS instead of visited, we just always want to move towards the goal
@@ -194,13 +186,8 @@ fn direction_key_pad_get_path_from_button_to_button(
                 cur_path.iter().map(|&d| Button::DirButton(d)).collect();
             required_path.push(Button::Activate);
             let path = cheapest_indirect_path(required_path.clone(), level - 1, cache);
-            if path.len() < cheapest_cost {
-                info!(
-                    "{}, Cheapest path for {:?} to {:?} so far {:?}",
-                    level, s, e, required_path
-                );
-                cheapest_cost = path.len();
-                cheapest_path = path;
+            if path < cheapest_cost {
+                cheapest_cost = path;
             }
             continue;
         }
@@ -230,8 +217,7 @@ fn direction_key_pad_get_path_from_button_to_button(
             }
         }
     }
-    cache.insert(key, cheapest_path.clone());
-    return cheapest_path;
+    return cheapest_cost;
 }
 
 fn parse_codes(string_list: &Vec<String>) -> Vec<Vec<Button>> {
@@ -280,12 +266,12 @@ pub fn puzzle_a(string_list: &Vec<String>) -> usize {
     // Increment by 1, that way we count for yourself and bottom robot
     // Since this will count down to 0 to represent you
     let levels = num_indirection + 1;
-    let mut final_paths: Vec<Vec<Button>> = vec![];
+    let mut final_paths_len: Vec<usize> = vec![];
     let mut final_numbers = vec![];
 
     for code in codes {
         let mut last_button = start;
-        let mut path = vec![];
+        let mut path = 0;
         let mut numeric_part: usize = 0;
         for button in code {
             let so_far =
@@ -296,10 +282,10 @@ pub fn puzzle_a(string_list: &Vec<String>) -> usize {
                     // Do nothing
                 }
             };
-            path.extend(so_far);
+            path += so_far;
             last_button = button;
         }
-        final_paths.push(path);
+        final_paths_len.push(path);
         final_numbers.push(numeric_part);
     }
 
@@ -307,33 +293,12 @@ pub fn puzzle_a(string_list: &Vec<String>) -> usize {
     info!(
         "num len {}, path len {}",
         final_numbers.len(),
-        final_paths.len()
+        final_paths_len.len()
     );
 
-    for (path, num) in final_paths.into_iter().zip(final_numbers) {
-        let output_path: Vec<String> = path
-            .iter()
-            .map(|x| match x {
-                Button::Activate => "A".to_string(),
-                Button::Invalid => "#".to_string(),
-                Button::Number(x) => x.to_string(),
-                Button::DirButton(d) => match d {
-                    Direction::NORTH => "^",
-                    Direction::EAST => ">",
-                    Direction::SOUTH => "v",
-                    Direction::WEST => "<",
-                    _ => panic!("Cannot input path for d {}", d),
-                }
-                .to_string(),
-            })
-            .collect();
-        info!(
-            "num: {}, Path: {:?}, len: {}",
-            num,
-            output_path.join(""),
-            output_path.len()
-        );
-        sum += num * path.len();
+    for (path, num) in final_paths_len.into_iter().zip(final_numbers) {
+        info!("num: {}, Path: {:?}", num, path);
+        sum += num * path;
     }
     return sum;
 }
@@ -347,7 +312,7 @@ pub fn puzzle_a(string_list: &Vec<String>) -> usize {
 ///     "456A",
 ///     "379A"
 /// ].iter().map(|s| s.to_string()).collect();
-/// assert_eq!(day21::puzzle_b(&vec1), 0);
+/// assert_eq!(day21::puzzle_b(&vec1), 154115708116294);
 /// ```
 pub fn puzzle_b(string_list: &Vec<String>) -> usize {
     let mut cache: Cache = HashMap::new();
@@ -357,12 +322,12 @@ pub fn puzzle_b(string_list: &Vec<String>) -> usize {
     // Increment by 1, that way we count for yourself and bottom robot
     // Since this will count down to 0 to represent you
     let levels = num_indirection + 1;
-    let mut final_paths: Vec<Vec<Button>> = vec![];
+    let mut final_path_len: Vec<usize> = vec![];
     let mut final_numbers = vec![];
 
     for code in codes {
         let mut last_button = start;
-        let mut path = vec![];
+        let mut path_length = 0;
         let mut numeric_part: usize = 0;
         for button in code {
             let so_far =
@@ -373,10 +338,10 @@ pub fn puzzle_b(string_list: &Vec<String>) -> usize {
                     // Do nothing
                 }
             };
-            path.extend(so_far);
+            path_length += so_far;
             last_button = button;
         }
-        final_paths.push(path);
+        final_path_len.push(path_length);
         final_numbers.push(numeric_part);
     }
 
@@ -384,33 +349,12 @@ pub fn puzzle_b(string_list: &Vec<String>) -> usize {
     info!(
         "num len {}, path len {}",
         final_numbers.len(),
-        final_paths.len()
+        final_path_len.len()
     );
 
-    for (path, num) in final_paths.into_iter().zip(final_numbers) {
-        let output_path: Vec<String> = path
-            .iter()
-            .map(|x| match x {
-                Button::Activate => "A".to_string(),
-                Button::Invalid => "#".to_string(),
-                Button::Number(x) => x.to_string(),
-                Button::DirButton(d) => match d {
-                    Direction::NORTH => "^",
-                    Direction::EAST => ">",
-                    Direction::SOUTH => "v",
-                    Direction::WEST => "<",
-                    _ => panic!("Cannot input path for d {}", d),
-                }
-                .to_string(),
-            })
-            .collect();
-        info!(
-            "num: {}, Path: {:?}, len: {}",
-            num,
-            output_path.join(""),
-            output_path.len()
-        );
-        sum += num * path.len();
+    for (path, num) in final_path_len.into_iter().zip(final_numbers) {
+        info!("num: {}, Path size: {:?}", num, path);
+        sum += num * path;
     }
     return sum;
 }
@@ -427,7 +371,7 @@ mod tests {
         let v = key_pad_get_path_from_button_to_button(start, end, 1, &mut cache);
         assert_eq!(
             v,
-            vec![Button::DirButton(Direction::WEST), Button::Activate]
+            vec![Button::DirButton(Direction::WEST), Button::Activate].len()
         );
     }
 
@@ -449,6 +393,7 @@ mod tests {
                 Button::DirButton(Direction::EAST),
                 Button::Activate
             ]
+            .len()
         );
     }
 
@@ -480,6 +425,7 @@ mod tests {
                 Button::DirButton(Direction::EAST),
                 Button::Activate,
             ]
+            .len()
         );
     }
 
@@ -503,7 +449,7 @@ mod tests {
         let v = key_pad_get_path_from_button_to_button(start, end, 1, &mut cache);
         assert_eq!(
             v,
-            vec![Button::DirButton(Direction::NORTH), Button::Activate]
+            vec![Button::DirButton(Direction::NORTH), Button::Activate].len()
         );
     }
 
@@ -521,6 +467,7 @@ mod tests {
                 Button::DirButton(Direction::EAST),
                 Button::Activate
             ]
+            .len()
         );
     }
 
@@ -539,6 +486,7 @@ mod tests {
                 Button::DirButton(Direction::EAST),
                 Button::Activate
             ]
+            .len()
         );
     }
 
@@ -561,31 +509,7 @@ mod tests {
                 Button::DirButton(Direction::NORTH),
                 Button::Activate,
             ]
-        );
-    }
-
-    #[test]
-    fn test_indirect_enna() {
-        let mut cache = Cache::new();
-        let path_to_indirect = vec![
-            Button::DirButton(Direction::EAST),
-            Button::DirButton(Direction::NORTH),
-            Button::DirButton(Direction::NORTH),
-            Button::Activate,
-        ];
-        let v = cheapest_indirect_path(path_to_indirect, 1, &mut cache);
-        assert_eq!(
-            v,
-            vec![
-                Button::DirButton(Direction::SOUTH),
-                Button::Activate,
-                Button::DirButton(Direction::NORTH),
-                Button::DirButton(Direction::WEST),
-                Button::Activate,
-                Button::Activate,
-                Button::DirButton(Direction::EAST),
-                Button::Activate,
-            ]
+            .len()
         );
     }
 
@@ -603,6 +527,7 @@ mod tests {
                 Button::DirButton(Direction::SOUTH),
                 Button::Activate
             ]
+            .len()
         );
     }
 
@@ -624,6 +549,7 @@ mod tests {
                 Button::DirButton(Direction::EAST),
                 Button::Activate
             ]
+            .len()
         );
     }
 }
