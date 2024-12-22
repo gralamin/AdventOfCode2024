@@ -1,7 +1,7 @@
 extern crate filelib;
 
 use std::cmp;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 pub use filelib::load_no_blanks;
 use log::info;
@@ -92,25 +92,21 @@ fn calc_monkey_data(
 
 fn calc_runs(
     monkey_data: Vec<(Vec<SecretNumber>, Vec<SecretNumber>, Vec<SecretNumber>)>,
-) -> Vec<
-    Vec<(
-        SecretNumber,
-        SecretNumber,
-        SecretNumber,
-        SecretNumber,
-        SecretNumber,
-    )>,
-> {
+) -> Vec<HashMap<(SecretNumber, SecretNumber, SecretNumber, SecretNumber), SecretNumber>> {
     let mut result = vec![];
     for (_, prices, diffs) in monkey_data.iter() {
-        let mut cur_result = vec![];
+        let mut cur_result = HashMap::new();
         for i in 0..diffs.len() - 4 {
             let a = diffs[i];
             let b = diffs[i + 1];
             let c = diffs[i + 2];
             let d = diffs[i + 3];
             let price = prices[i + 3];
-            cur_result.push((a, b, c, d, price));
+            let key = (a, b, c, d);
+            if cur_result.contains_key(&key) {
+                continue;
+            }
+            cur_result.insert(key, price);
         }
         result.push(cur_result);
     }
@@ -146,25 +142,19 @@ pub fn puzzle_b(
     let monkey_data = calc_monkey_data(initial_values, then_iterations);
     let runs = calc_runs(monkey_data);
     let mut highest_sum = 0;
+    let default = 0;
     for monkey_runs in runs.iter() {
-        for (a, b, c, d, _) in monkey_runs.iter() {
-            let key = (*a, *b, *c, *d);
-            if cache.contains(&key) {
+        for (key, _) in monkey_runs.iter() {
+            if cache.contains(key) {
                 continue;
             }
 
             let mut cur_sum = 0;
             for other_data in runs.iter() {
-                for (w, x, y, z, price) in other_data.iter() {
-                    if (*a, *b, *c, *d) != (*w, *x, *y, *z) {
-                        continue;
-                    }
-                    // Sold, done with this monkey
-                    cur_sum += *price;
-                    break;
-                }
+                let p: &SecretNumber = other_data.get(key).or(Some(&default)).unwrap();
+                cur_sum += *p;
             }
-            cache.insert(key);
+            cache.insert(*key);
 
             info!("key: {:?}, gave sum {}", key, cur_sum);
             highest_sum = cmp::max(highest_sum, cur_sum);
