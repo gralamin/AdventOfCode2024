@@ -96,12 +96,12 @@ fn calc_runs(
     let mut result = vec![];
     for (_, prices, diffs) in monkey_data.iter() {
         let mut cur_result = HashMap::new();
-        for i in 0..diffs.len() - 4 {
-            let a = diffs[i];
-            let b = diffs[i + 1];
-            let c = diffs[i + 2];
-            let d = diffs[i + 3];
-            let price = prices[i + 3];
+        for i in 3..diffs.len() {
+            let a = diffs[i - 3];
+            let b = diffs[i - 2];
+            let c = diffs[i - 1];
+            let d = diffs[i];
+            let price = prices[i];
             let key = (a, b, c, d);
             if cur_result.contains_key(&key) {
                 continue;
@@ -208,5 +208,33 @@ mod tests {
     fn puzzle_b_single_input() {
         let vec1: Vec<String> = vec!["123"].iter().map(|s| s.to_string()).collect();
         assert_eq!(puzzle_b(&vec1, 0, 10), 6);
+    }
+
+    #[test]
+    fn test_calc_runs() {
+        let num_list = vec![
+            15887950, 16495136, 527345, 704524, 1553684, 12683156, 11100544, 12249484, 7753432,
+        ];
+        let digit_lsit = vec![0, 6, 5, 4, 4, 6, 4, 4, 2];
+        let diff_list = vec![-3, 6, -1, -1, 0, 2, -2, 0, -2];
+        let monkey_data = vec![(num_list, digit_lsit, diff_list)];
+        let runs = calc_runs(monkey_data);
+
+        let expected_keys = vec![
+            (-3, 6, -1, -1),
+            (6, -1, -1, 0), // CHECK
+            (-1, -1, 0, 2), // CHECK
+            (-1, 0, 2, -2), // CHECK
+            (0, 2, -2, 0),  // CHECK
+            (2, -2, 0, -2), // CHECK
+        ];
+        let expected_values = vec![4, 4, 6, 4, 4, 2];
+        let run = runs.first().unwrap().clone();
+        println!("{:?}", run);
+        assert_eq!(run.len(), expected_keys.len());
+        for (key, value) in expected_keys.into_iter().zip(expected_values) {
+            let v = *run.get(&key).or(Some(&0)).unwrap();
+            assert_eq!(v, value);
+        }
     }
 }
