@@ -291,7 +291,7 @@ pub fn puzzle_b(string_list: &Vec<Vec<String>>, num_swaps: usize) -> String {
             continue;
         } else if op != Operation::Xor && start_z && out != "z45" {
             // Other than z45 that zs must be on a Xor, you can find this by manually inspecting the circuit diagram as a graph.
-            // z45 happens to be special in this input.
+            // z45 happens to be special in this input - becaues its the final output.
             successful_swaps.push(out.clone());
             info!(
                 "Identified issue rule 3 on {:?} {:?} {:?} -> {:?}",
