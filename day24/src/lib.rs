@@ -3,8 +3,7 @@ extern crate filelib;
 use std::collections::HashMap;
 
 pub use filelib::{load, split_lines_by_blanks};
-use itertools::Itertools;
-use log::info;
+use log::{error, info};
 
 type Number = u128;
 type Key = String;
@@ -192,70 +191,170 @@ pub fn puzzle_a(string_list: &Vec<Vec<String>>) -> Number {
     return get_number_in_letter(&state, "z");
 }
 
-/// Do num_swaps to find the correct answer
+/// Do num_swaps to find the answer. I don't have good example input for this...
 /// ```
 /// let vec1: Vec<Vec<String>> = vec![vec![
-///     "x00: 0",
-///     "x01: 1",
-///     "x02: 0",
+///     "x00: 1",
+///     "x01: 0",
+///     "x02: 1",
 ///     "x03: 1",
 ///     "x04: 0",
-///     "x05: 1",
-///     "y00: 0",
-///     "y01: 0",
+///     "y00: 1",
+///     "y01: 1",
 ///     "y02: 1",
 ///     "y03: 1",
-///     "y04: 0",
-///     "y05: 1",
-/// ].iter().map(|s| s.to_string()).collect(),
-///     vec![
-///     "x00 AND y00 -> z05",
-///     "x01 AND y01 -> z02",
-///     "x02 AND y02 -> z01",
-///     "x03 AND y03 -> z03",
-///     "x04 AND y04 -> z04",
-///     "x05 AND y05 -> z00",
+///     "y04: 1"].iter().map(|s| s.to_string()).collect(),
+///     vec!["ntg XOR fgs -> mjb",
+///     "y02 OR x01 -> tnw",
+///     "kwq OR kpj -> z05",
+///     "x00 OR x03 -> fst",
+///     "tgd XOR rvg -> z01",
+///     "vdt OR tnw -> bfw",
+///     "bfw AND frj -> z10",
+///     "ffh OR nrd -> bqk",
+///     "y00 AND y03 -> djm",
+///     "y03 OR y00 -> psh",
+///     "bqk OR frj -> z08",
+///     "tnw OR fst -> frj",
+///     "gnj AND tgd -> z11",
+///     "bfw XOR mjb -> z00",
+///     "x03 OR x00 -> vdt",
+///     "gnj AND wpb -> z02",
+///     "x04 AND y00 -> kjc",
+///     "djm OR pbm -> qhw",
+///     "nrd AND vdt -> hwm",
+///     "kjc AND fst -> rvg",
+///     "y04 OR y02 -> fgs",
+///     "y01 AND x02 -> pbm",
+///     "ntg OR kjc -> kwq",
+///     "psh XOR fgs -> tgd",
+///     "qhw XOR tgd -> z09",
+///     "pbm OR djm -> kpj",
+///     "x03 XOR y03 -> ffh",
+///     "x00 XOR y04 -> ntg",
+///     "bfw OR bqk -> z06",
+///     "nrd XOR fgs -> wpb",
+///     "frj XOR qhw -> z04",
+///     "bqk OR frj -> z07",
+///     "y03 OR x01 -> nrd",
+///     "hwm AND bqk -> z03",
+///     "tgd XOR rvg -> z12",
+///     "tnw OR pbm -> gnj",
 /// ].iter().map(|s| s.to_string()).collect()];
-/// assert_eq!(day24::puzzle_b(&vec1, 2), "z00,z01,z02,z05");
-/// ```
+/// assert_eq!(day24::puzzle_b(&vec1, 6), "ffh,mjb,tgd,wpb,z02,z03,z05,z06,z07,z08,z10,z11");
 pub fn puzzle_b(string_list: &Vec<Vec<String>>, num_swaps: usize) -> String {
-    let puzzle_a_answer = puzzle_a(string_list);
-    let mut state: HashMap<String, u128> = parse_variables(string_list.first().unwrap());
     let instructions: Vec<(String, String, String, Operation)> =
         parse_operations(string_list.last().unwrap());
-    let correct_answer: u128 =
-        get_number_in_letter(&state, "x") + get_number_in_letter(&state, "y");
-    // Different bits here can tell us which is wrong. z00 is the least significant bit, count up from there.
-    let mut different_bits = correct_answer ^ puzzle_a_answer;
-    let mut count_different = vec![];
-    let mut i: usize = 0;
-    while different_bits > 0 {
-        if different_bits % 2 == 1 {
-            count_different.push(i)
-        }
-        i += 1;
-        different_bits = different_bits >> 1;
-    }
-    // count_different now has a list of which registers are wrong.
 
-    // try doing `num_swaps` of instructions in a copy of instructions
-    // Copy state than call do_instructions(&copy_instructions, &mut copy_state);
-    // Then check if correct_answer == get_number_in_letter(&state, "z"), if it does return the swaps done, otherwise try a different set of swaps.
-    let mut cur_answer = 0;
     let mut successful_swaps: Vec<Key> = vec![];
 
-    /*
-    while cur_answer != correct_answer {
-        let mut copy_state = state.clone();
-        let mut copy_instructions = instructions.clone();
-
-        // try doing num_swaps swaps that we haven't yet tried.
-
-        // Check if swaps were successful
-        do_instructions(&copy_instructions, &mut copy_state);
-        cur_answer = get_number_in_letter(&state, "z");
+    // look for the following nodes that are in error, and hope we just end up with the correct amount
+    // The other way I thought of only would take 3000 years to run
+    for (in_a, in_b, out, op) in instructions.clone() {
+        let start_x_a = in_a.starts_with("x");
+        let start_x_b = in_b.starts_with("x");
+        let start_y_a = in_a.starts_with("y");
+        let start_y_b = in_b.starts_with("y");
+        let start_z = out.starts_with("z");
+        if op == Operation::And && ((start_x_a && start_y_b) || (start_x_b && start_y_a)) {
+            if start_z && out != "z00" {
+                // problem node, add this output.
+                // This is essentially a misplaced adder
+                // Look up how an adder circuit works
+                successful_swaps.push(out.clone());
+                info!(
+                    "Identified issue rule 1 on {:?} {:?} {:?} -> {:?}",
+                    in_a.clone(),
+                    op,
+                    in_b.clone(),
+                    out.clone()
+                );
+                continue;
+            }
+            // We want to drop down in logic for other ruels later
+        } else if op == Operation::Xor
+            && !start_x_a
+            && !start_y_b
+            && !start_z
+            && !start_y_a
+            && !start_x_b
+        {
+            // A XOR must go onto an X and y, or output to a z
+            successful_swaps.push(out.clone());
+            info!(
+                "Identified issue rule 2 on {:?} {:?} {:?} -> {:?}",
+                in_a.clone(),
+                op,
+                in_b.clone(),
+                out.clone()
+            );
+            continue;
+        } else if op != Operation::Xor && start_z && out != "z45" {
+            // Other than z45 that zs must be on a Xor, you can find this by manually inspecting the circuit diagram as a graph.
+            // z45 happens to be special in this input.
+            successful_swaps.push(out.clone());
+            info!(
+                "Identified issue rule 3 on {:?} {:?} {:?} -> {:?}",
+                in_a.clone(),
+                op,
+                in_b.clone(),
+                out.clone()
+            );
+            continue;
+        }
+        if op == Operation::And
+            && ((start_x_a && start_y_b && in_a != "x00")
+                || (start_x_b && start_y_a && in_b != "x00"))
+        {
+            let mut found = false;
+            // the intermediate result of an x AND y should be an operand of one of the OR rules
+            for (pos_in_a, pos_in_b, _, op) in instructions.iter() {
+                if *op == Operation::Or && (out == pos_in_a.clone() || out == pos_in_b.clone()) {
+                    found = true;
+                    break;
+                }
+            }
+            if !found {
+                info!(
+                    "Identified issue rule 4 on {:?} {:?} {:?} -> {:?}",
+                    in_a.clone(),
+                    op,
+                    in_b.clone(),
+                    out.clone()
+                );
+                successful_swaps.push(out.clone());
+            }
+        }
+        // the intermediate result of 0 XOR y should be an operand of one of the AND rules
+        else if op == Operation::Xor
+            && ((start_x_a && start_y_b && in_a != "x00")
+                || (start_x_b && start_y_a && in_b != "x00"))
+        {
+            let mut found = false;
+            // the intermediate result of an x AND y should be an operand of one of the OR rules
+            for (pos_in_a, pos_in_b, _, op) in instructions.iter() {
+                if *op == Operation::And && (out == pos_in_a.clone() || out == pos_in_b.clone()) {
+                    found = true;
+                    break;
+                }
+            }
+            if !found {
+                info!(
+                    "Identified issue rule 5 on {:?} {:?} {:?} -> {:?}",
+                    in_a.clone(),
+                    op,
+                    in_b.clone(),
+                    out.clone()
+                );
+                successful_swaps.push(out.clone());
+            }
+        }
     }
-    */
+
+    if successful_swaps.len() != num_swaps * 2 {
+        error!("Unexpected number of swaps {}", successful_swaps.len());
+    }
+
     successful_swaps.sort();
     return successful_swaps.join(",");
 }
